@@ -12,22 +12,48 @@ function LoginPage() {
   const { login, token, employee, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const employeeData = {
-      name,
-      email,
-      department,
-      designation: role === "hr" ? "HR Manager" : "Software Engineer",
-      leaveBalance: 20
-    };
-    const mockToken = "jwt_token_" + Date.now();
-    login(employeeData, mockToken, role);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    if (role === "hr") {
-      navigate("/hr");
-    } else {
-      navigate("/my-leaves");
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/v1/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+          department,
+          role
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setError(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+
+      login(data.employee, data.token, data.employee?.role || role);
+
+      if ((data.employee?.role || role) === "hr") {
+        navigate("/hr");
+      } else {
+        navigate("/my-leaves");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to connect to backend server");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,6 +83,12 @@ function LoginPage() {
           </div>
         </div>
       ) : null}
+
+      {error && (
+        <div style={{ padding: "10px", backgroundColor: "#fee2e2", color: "#b91c1c", borderRadius: "4px", marginBottom: "1rem", fontSize: "0.9rem" }}>
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1rem", textAlign: "left" }}>
         <div>
@@ -119,19 +151,20 @@ function LoginPage() {
 
         <button
           type="submit"
+          disabled={loading}
           style={{
             marginTop: "0.5rem",
             padding: "10px",
-            backgroundColor: "#2563eb",
+            backgroundColor: loading ? "#93c5fd" : "#2563eb",
             color: "white",
             border: "none",
             borderRadius: "4px",
             fontSize: "1rem",
             fontWeight: "bold",
-            cursor: "pointer"
+            cursor: loading ? "not-allowed" : "pointer"
           }}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
