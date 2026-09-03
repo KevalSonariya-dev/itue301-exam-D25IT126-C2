@@ -12,11 +12,11 @@ const leaveRequestSchema = new mongoose.Schema({
     required: [true, 'Leave Type ID is required']
   },
   fromDate: {
-    type: String,
+    type: Date,
     required: [true, 'From date is required']
   },
   toDate: {
-    type: String,
+    type: Date,
     required: [true, 'To date is required']
   },
   days: {
